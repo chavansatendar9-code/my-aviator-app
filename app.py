@@ -122,7 +122,7 @@ def get_jarvis_prediction(df):
     # -----------------------------------------------------
     
     # शेवटचे १० मोठे मल्टिप्लायर (3x+) फिल्टर करा
-    hits = df[df['Multiplier'] >= 3.0].tail(10)
+    hits = df[df['Multiplier'] >= 3.0].tail(5).copy()
     
     # १२ मिनिटांच्या ब्लॉकनुसार मिनिटाचा क्रमांक (१ ते १२) काढा
     hits['M'] = (hits['Timestamp'].dt.minute % 12) + 1
@@ -308,4 +308,5 @@ with col2:
         table_html += row_html
 
     table_html += "</tbody></table>"
+
     st.markdown(table_html, unsafe_allow_html=True)
