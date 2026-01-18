@@ -112,33 +112,35 @@ def get_color(m):
     return "🔵 < 2x"
 def get_jarvis_prediction(df):
     if df.empty: return None, "3x+", "डेटा एन्ट्री सुरू करा..."
-  # --- गॅप डिटेक्शन (हा भाग तुझ्या मागील कोडमध्ये नव्हता) ---
-    latest_time = df['Timestamp'].max()
-    now_ist = datetime.now(IST)
-    gap_minutes = (now_ist - latest_time).total_seconds() / 60
     
-    if gap_minutes > 15:
-        return None, "Wait", "⚠️ १५ मिनिटांचा गॅप! नवीन पॅटर्नसाठी ३-४ एन्ट्री टाका."
-    # -----------------------------------------------------
+    # १. फक्त ३x च्या वरचे हिट्स काढा (वेळेची अट न लावता)
+    all_hits = df[df['Multiplier'] >= 3.0].copy()
     
-    # शेवटचे १० मोठे मल्टिप्लायर (3x+) फिल्टर करा
-    hits = df[df['Multiplier'] >= 3.0].tail(5).copy()
-    
-    # १२ मिनिटांच्या ब्लॉकनुसार मिनिटाचा क्रमांक (१ ते १२) काढा
+    # २. जर ३ पेक्षा कमी एन्ट्री असतील तरच थांबवा
+    if len(all_hits) < 3:
+        return None, "Wait", f"🤖 जार्विस: अजून {3 - len(all_hits)} एन्ट्री (३x+) आवश्यक आहेत."
+
+    # ३. शेवटचे ५ हिट्स AI ला विश्लेषणासाठी द्या
+    hits = all_hits.tail(5).copy()
     hits['M'] = (hits['Timestamp'].dt.minute % 12) + 1
     
     try:
-        # AI ला प्रश्न विचारणे
-        prompt = f"Data: {hits[['M', 'Multiplier']].to_string()}. Predict Next 3x+ Min (1-12) and Range. Output format: Min: [No], Range: [X-X], Msg: [Short Marathi Advice]"
-        resp = model.generate_content(prompt).text
+        # प्रॉम्प्ट अधिक सोपा केला जेणेकरून AI गोंधळणार नाही
+        prompt = f"Analyze these Aviator 12-min block numbers: {hits['M'].tolist()}. Predict next winning minute (1-12). Reply ONLY in this format: Min: [Number], Range: [X-X], Msg: [Marathi Tip]"
         
-        # AI च्या उत्तरातील मिनिट आणि रेंज वेगळी करणे
-        t_min = re.search(r'Min: (\d+)', resp)
-        t_range = re.search(r'Range: ([\d.x-]+)', resp)
+        response = model.generate_content(prompt)
+        resp_text = response.text
         
-        return (int(t_min.group(1)) if t_min else None), (t_range.group(1) if t_range else "3x+"), resp
+        # नंबर काढण्यासाठी अधिक स्ट्रिक्ट पद्धत
+        t_min_match = re.search(r'Min:\s*(\d+)', resp_text)
+        t_range_match = re.search(r'Range:\s*([\d.xX-]+)', resp_text)
+        
+        t_min = int(t_min_match.group(1)) if t_min_match else None
+        t_range = t_range_match.group(1) if t_range_match else "3x+"
+        
+        return t_min, t_range, resp_text
     except Exception as e:
-        return None, "3x+", "Jarvis विचार करत आहे..."
+        return None, "Wait", f"AI Error: {str(e)}"
 
 # --- Main App Logic ---
 st.title("✈️ Aviator Graph")
@@ -310,4 +312,5 @@ with col2:
     table_html += "</tbody></table>"
 
     st.markdown(table_html, unsafe_allow_html=True)
+
 
