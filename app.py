@@ -14,7 +14,7 @@ st.set_page_config(page_title="Aviator Analysis Dashboard", layout="wide")
 DB_FILE = "aviator_data.db" # Database file name
 IST = pytz.timezone('Asia/Kolkata')
 # AI Setup
-genai.configure(api_key="AIzaSyAmX-U02uY2mi-MIro7Ic9ElvCatehsgew") 
+genai.configure(api_key="AIzaSyAQgauCtznq4qi4LRl_F19LA8L84B2_mC4") 
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 # --- आकर्षक आणि लहान दिसण्यासाठी CSS ---
@@ -335,6 +335,7 @@ with col2:
     table_html += "</tbody></table>"
 
     st.markdown(table_html, unsafe_allow_html=True)
+
 
 
 
