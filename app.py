@@ -113,48 +113,34 @@ def get_color(m):
 def get_jarvis_prediction(df):
     if df.empty: return None, "3x+", "डेटा एन्ट्री सुरू करा..."
     
-    # १. फक्त ३x च्या वरचे हिट्स काढा
     all_hits = df[df['Multiplier'] >= 3.0].copy()
     
-    # २. जर ३ पेक्षा कमी एन्ट्री असतील तर थांबा
+    # जर ३ पेक्षा कमी हिट्स असतील तर हा मेसेज दिसेल
     if len(all_hits) < 3:
-        return None, "Wait", f"🤖 जार्विस: अजून {3 - len(all_hits)} एन्ट्री (३x+) आवश्यक आहेत."
+        return None, "Wait", f"🤖 जार्विस: अजून {3 - len(all_hits)} एन्ट्री (3x+) आवश्यक आहेत."
 
-    # ३. शेवटचे ७ हिट्स घ्या (जास्त डेटा = चांगले रिझल्ट)
     hits = all_hits.tail(7).copy()
     hits['M'] = (hits['Timestamp'].dt.minute % 12) + 1
     
-    # सध्याचा १२-मिनिटांचा ब्लॉक कोणता चालू आहे ते काढा
-    current_min_in_block = (datetime.now(IST).minute % 12) + 1
-    
     try:
-        # AI ला अधिक स्पष्ट सूचना द्या
-        prompt = f"""
-        Analyze these Aviator 12-min block positions: {hits['M'].tolist()}
-        Current minute in block is: {current_min_in_block}
-        Predict the NEXT winning minute (1-12) that hasn't passed yet.
-        Reply strictly in this format:
-        Min: [Number]
-        Range: [X-X]
-        Msg: [Marathi Tip]
-        """
-        
+        prompt = f"Analyze Aviator positions: {hits['M'].tolist()}. Predict the NEXT winning minute (1-12). Reply ONLY as: Min: [Number], Range: [X-X], Msg: [Marathi Tip]"
         response = model.generate_content(prompt)
-        resp_text = response.text
         
-        # --- Regex सुधारणा (Markdown आणि जास्तीचे शब्द टाळण्यासाठी) ---
-        t_min_match = re.search(r'Min:\s*\?(\d+)\?', resp_text, re.IGNORECASE)
-        t_range_match = re.search(r'Range:\s*\?([\d.xX-]+)\?', resp_text, re.IGNORECASE)
+        # जर AI कडून उत्तर आले नाही (API Issue)
+        if not response or not response.text:
+            return None, "API Error", "🤖 जार्विस: API कडून प्रतिसाद मिळत नाहीये. की (Key) तपासा."
+            
+        resp_text = response.text
+        t_min_match = re.search(r'Min:\s*\?(\d+)\?', resp_text)
+        t_range_match = re.search(r'Range:\s*\?([\d.xX-]+)\?', resp_text)
         
         t_min = int(t_min_match.group(1)) if t_min_match else None
         t_range = t_range_match.group(1) if t_range_match else "3x+"
-        
-        # Debugging साठी (गरज नसल्यास काढून टाक)
-        # st.write(f"DEBUG AI Response: {resp_text}") 
-        
         return t_min, t_range, resp_text
+
     except Exception as e:
-        return None, "Wait", f"AI Error: {str(e)}"
+        # जर API Key चुकीची असेल किंवा कोटा संपला असेल तर इथे एरर दिसेल
+        return None, "Error", f"🤖 जार्विस एरर: API Key तपासा किंवा इंटरनेट कनेक्शन बघा. ({str(e)})"
 
 # --- Main App Logic ---
 st.title("✈️ Aviator Graph")
@@ -335,6 +321,7 @@ with col2:
     table_html += "</tbody></table>"
 
     st.markdown(table_html, unsafe_allow_html=True)
+
 
 
 
