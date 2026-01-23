@@ -300,18 +300,27 @@ with col2:
 
             # --- जुना कोड काढून हा नवीन कोड टाका ---
             
-            # 1. Target आहे का ते तपासा (फक्त चालू i=0 ब्लॉकसाठी)
-            is_target = (i == 0 and t_min is not None and t_min == m + 1)
+            # --- सुधारित Target Check (🎯 साठी) ---
+            is_target = False
+            if i == 0 and t_min is not None:
+                try:
+                    # AI ने दिलेला t_min आणि लूपमधील मिनिट (m+1) यांची तुलना
+                    if int(str(t_min).strip()) == (m + 1):
+                        is_target = True
+                except (ValueError, TypeError):
+                    is_target = False
 
-            # 2. Cell Content आणि Class ठरवा
+            # २. सेलमध्ये काय दाखवायचे ते ठरवा (Data की 🎯 की रिकामी जागा)
             if not minute_data_in_block.empty:
+                # जर त्या मिनिटाला आधीच 3x+ हिट असेल तर व्हॅल्यू दाखवा
                 values = minute_data_in_block['Multiplier'].tolist()
                 formatted_values = "<br>".join([f"{v:.2f}x" for v in values])
                 cell_content = formatted_values
-                cell_class = "highlight-cell" # हिरवा (डेटा आहे)
+                cell_class = "highlight-cell" # हिरवा रंग
             elif is_target:
+                # जर डेटा नसेल पण AI ने प्रेडिक्ट केलेलं मिनिट असेल तर 🎯 दाखवा
                 cell_content = "🎯"
-                cell_class = "target-cell"  # निळा (Jarvis चे टार्गेट)
+                cell_class = "target-cell" # निळा रंग
             else:
                 cell_content = ""
                 cell_class = ""
@@ -326,6 +335,7 @@ with col2:
     table_html += "</tbody></table>"
 
     st.markdown(table_html, unsafe_allow_html=True)
+
 
 
 
