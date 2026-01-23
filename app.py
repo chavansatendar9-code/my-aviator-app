@@ -131,6 +131,9 @@ def get_jarvis_prediction(df):
             return None, "API Error", "🤖 जार्विस: API कडून प्रतिसाद मिळत नाहीये. की (Key) तपासा."
             
         resp_text = response.text
+        # --- ही ओळ इथे टाका (Debugging साठी) ---
+        st.write("AI कडून आलेला रिस्पॉन्स:", resp_text)
+        # ---------------------------------------
         t_min_match = re.search(r'Min:\s*\?(\d+)\?', resp_text)
         t_range_match = re.search(r'Range:\s*\?([\d.xX-]+)\?', resp_text)
         
@@ -321,6 +324,7 @@ with col2:
     table_html += "</tbody></table>"
 
     st.markdown(table_html, unsafe_allow_html=True)
+
 
 
 
